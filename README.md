@@ -45,3 +45,7 @@ Tests stub all outbound requests and never contact the live Creatio webhook.
 Syntech logo and product screenshots come from the user-supplied Syntech Manufacturing website. Industrial photos are illustrative Unsplash assets:
 https://images.unsplash.com/photo-1581091226825-a6a2a5aee158
 https://images.unsplash.com/photo-1581092921461-eab62e97a780
+
+## Language in shared links
+
+Use `/uk/`, `/ru/` or `/en/` for shareable language-specific pages. A valid `?lang=` parameter takes priority over the path. `ua` is accepted as an alias for `uk`, including the `/ua/` redirect. Case and region variants such as `EN` and `en-US` are normalized in the query. With no language in the link, the default is Russian. Browser language and stored preferences do not override an explicit link. Redirects preserve UTM parameters and the hash. The deployed router is covered by `scripts/check-language-router.mjs`.

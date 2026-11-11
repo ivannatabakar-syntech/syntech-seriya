@@ -28,7 +28,7 @@ jobs:
           LEAD_API_URL: ${{ vars.LEAD_API_URL }}
           PAGES_CUSTOM_DOMAIN: ${{ vars.PAGES_CUSTOM_DOMAIN }}
       - name: Check
-        run: npm test && node scripts/check-pages.mjs
+        run: npm test && node scripts/check-pages.mjs && node scripts/check-language-router.mjs
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
