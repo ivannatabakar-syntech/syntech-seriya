@@ -1,0 +1,12 @@
+import worker from '../dist/server/index.js';
+import assert from 'node:assert/strict';
+const api='https://backend.local/api/leads',origin='https://example.github.io';let calls=0;
+globalThis.fetch=async()=>{calls++;return new Response('',{status:202})};
+const env={CREATIO_WEBHOOK_URL:'https://example.test/webhook',ALLOWED_FORM_ORIGINS:origin,BUCKET:{put:async()=>{}}};
+const preflight=await worker.fetch(new Request(api,{method:'OPTIONS',headers:{origin,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'}}),env);assert.equal(preflight.status,204);assert.equal(preflight.headers.get('Access-Control-Allow-Origin'),origin);
+assert.equal((await worker.fetch(new Request(api,{method:'OPTIONS',headers:{origin:'https://other.github.io'}}),env)).status,403);
+const data={name:'QA',company:'Example Test Company',email:'qa@example.com',phone:'',team:'1–20',software:'excel',consent:'on',submittedFrom:origin+'/syntech-seriya/en/?utm_source=linkedin'};
+const post=d=>new Request(api,{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(d)});
+const good=await worker.fetch(post(data),env);assert.equal(good.status,201);assert.equal(good.headers.get('Access-Control-Allow-Origin'),origin);assert.equal(calls,1);
+assert.equal((await worker.fetch(post({...data,submittedFrom:'https://other.github.io/'}),env)).status,400);assert.equal(calls,1);
+console.log('PASS: exact-origin CORS, GitHub Pages submissions, rejected origins and forged page URLs');

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+_site/
+work/
+.env
+.env.*
+!.env.example
+.openai/

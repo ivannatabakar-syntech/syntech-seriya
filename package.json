@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "python3 scripts/build.py",
+    "test": "node scripts/check.mjs && node scripts/check-locales.mjs && python3 scripts/check-world.py && node scripts/check-webhook.mjs && node scripts/check-cors.mjs",
+    "build:pages": "npm run build && node scripts/build-pages.mjs"
+  }
+}
