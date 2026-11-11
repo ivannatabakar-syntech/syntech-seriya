@@ -8,7 +8,7 @@ def world(prefix):
  for ident in re.findall(r'\bid="([^"]+)"',markup):
   markup=markup.replace('id="'+ident+'"','id="'+prefix+'-'+ident+'"').replace('url(#'+ident+')','url(#'+prefix+'-'+ident+')')
  return markup
-html=(src/'page.html').read_text().replace('/* STYLES */',(src/'style.css').read_text()).replace('<!-- WORLD -->',world('home'),1).replace('<!-- WORLD -->',world('game'),1).replace('/* APP */',(src/'game-data.js').read_text()+'\n'+(src/'app.js').read_text())
+html=(src/'page.html').read_text().replace('/* STYLES */',(src/'style.css').read_text()).replace('<!-- WORLD -->',world('home'),1).replace('<!-- WORLD -->',world('game'),1).replace('/* APP */',(src/'game-data.js').read_text()+'\n'+(src/'validation.js').read_text()+'\n'+(src/'app.js').read_text())
 
 assets={}
 for p in (src/'assets').iterdir():

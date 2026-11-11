@@ -30,7 +30,7 @@ async function handleRequest(request,env){
    await save();
    let upstreamStatus=null,providerCode=null;
    try{
-    const response=await fetch(CREATIO_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':id},body:JSON.stringify(record.webhookPayload),signal:AbortSignal.timeout(12000),redirect:'error'});
+    const response=await fetch(CREATIO_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':id},body:JSON.stringify(record.webhookPayload),signal:AbortSignal.timeout(12000),redirect:'manual'});
     upstreamStatus=response.status;
     if(!response.ok){
      try{const body=await response.json();const code=body?.Code||body?.code;if(typeof code==='string'&&/^[a-z0-9_.-]{1,80}$/i.test(code))providerCode=code}catch{}

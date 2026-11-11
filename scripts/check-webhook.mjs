@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 const endpoint='https://example.test/creatio-webhook';
 const origin='https://game.local';const records=new Map();const calls=[];let mode='ok';
 // The real endpoint is never contacted by these checks.
-globalThis.fetch=async(url,options)=>{calls.push({url,options,payload:JSON.parse(options.body)});if(mode==='throw')throw Error('simulated offline');return new Response('',{status:mode==='fail'?503:202})};
+globalThis.fetch=async(url,options)=>{assert.ok(['follow','manual'].includes(options.redirect),'Cloudflare edge accepts only follow or manual redirects');calls.push({url,options,payload:JSON.parse(options.body)});if(mode==='throw')throw Error('simulated offline');return new Response('',{status:mode==='fail'?503:202})};
 const env={CREATIO_WEBHOOK_URL:endpoint,BUCKET:{put:async(k,v)=>records.set(k,JSON.parse(v)),get:async k=>records.has(k)?{json:async()=>structuredClone(records.get(k))}:null}};
 const valid={requestId:crypto.randomUUID(),name:'Example Person',company:'Example Test Company',phone:'+380501234567',email:'qa@example.com',team:'21–50',software:'excel',consent:'on',language:'en',submittedFrom:origin+'/?lang=en&utm_source=linkedin&utm_campaign=demo#result',attribution:{utm_source:'linkedin',utm_campaign:'demo'}};
 const request=d=>new Request(origin+'/api/leads',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(d)});
 let response=await worker.fetch(request(valid),env);assert.equal(response.status,201);assert.equal((await response.json()).ok,true);assert.equal(calls.length,1);
-const call=calls[0];assert.equal(call.url,endpoint);assert.equal(call.options.method,'POST');assert.equal(call.options.headers['Content-Type'],'application/json');assert.equal(call.options.headers['Idempotency-Key'],valid.requestId);assert.equal(call.options.redirect,'error');assert.ok(call.options.signal instanceof AbortSignal);
+const call=calls[0];assert.equal(call.url,endpoint);assert.equal(call.options.method,'POST');assert.equal(call.options.headers['Content-Type'],'application/json');assert.equal(call.options.headers['Idempotency-Key'],valid.requestId);assert.equal(call.options.redirect,'manual');assert.ok(call.options.signal instanceof AbortSignal);
 assert.deepEqual(Object.keys(call.payload).sort(),['name','company','phone','email','formType','tracking'].sort());assert.equal(call.payload.formType,'consultation');assert.equal(call.payload.company,valid.company);assert.equal(call.payload.phone,valid.phone);assert.equal(call.payload.tracking.submitted_from,valid.submittedFrom.split('#')[0]);assert.ok(Number.isFinite(Date.parse(call.payload.tracking.submitted_at)));
 assert.equal(records.get('leads/requests/'+valid.requestId+'.json').delivery.status,'delivered');
 // Repeating the same successful request does not send a second webhook.

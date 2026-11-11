@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const sandbox={};vm.createContext(sandbox);vm.runInContext(fs.readFileSync(new URL('../src/validation.js',import.meta.url),'utf8')+';globalThis.v={normalizePhone,isValidPhone,isValidEmail}',sandbox);const v=sandbox.v;
+for(const phone of ['', '+380663497611', '+37477008002','+1 (202) 555-0123','+44 20 7946 0958'])assert.equal(v.isValidPhone(phone),true,phone);
+for(const phone of ['1111111111','+123','+0123456789','+1234567890123456','+380abcdef','++380663497611'])assert.equal(v.isValidPhone(phone),false,phone);
+assert.equal(v.normalizePhone('+1 (202) 555-0123'),'+12025550123');
+for(const email of ['test@example.com','first.last+demo@sub.example.co.uk',' test@example.com ','user@xn--e1afmkfd.xn--p1ai'])assert.equal(v.isValidEmail(email),true,email);
+for(const email of ['','test','test@','test@localhost','test@@example.com','test@example..com','.test@example.com','test.@example.com','test@-example.com','test@example.c','test space@example.com'])assert.equal(v.isValidEmail(email),false,email);
+const html=fs.readFileSync(new URL('../src/page.html',import.meta.url),'utf8');assert.ok(html.includes('aria-describedby="phoneHint phoneError"'));assert.ok(html.includes('aria-describedby="emailError"'));assert.ok(html.includes('id="phoneError"'));assert.ok(html.includes('id="emailError"'));
+console.log('PASS: international phone formatting, email validation, optional phone, accessible inline error bindings');
