@@ -28,15 +28,25 @@ async function handleRequest(request,env){
    record.delivery={status:'pending',attempts:(record.delivery?.attempts||0)+1,attemptedAt:createdAt};
    const save=()=>env.BUCKET.put(key,JSON.stringify(record),{httpMetadata:{contentType:'application/json'}});
    await save();
+   let upstreamStatus=null,providerCode=null;
    try{
     const response=await fetch(CREATIO_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':id},body:JSON.stringify(record.webhookPayload),signal:AbortSignal.timeout(12000),redirect:'error'});
-    if(!response.ok)throw Error('rejected');
-    record.delivery.status='delivered';record.delivery.deliveredAt=new Date().toISOString();await save();
-    return Response.json({ok:true},{status:201,headers:{'Cache-Control':'no-store'}});
-   }catch{
-    record.delivery.status='failed';await save();
-    return Response.json({ok:false,saved:true},{status:502,headers:{'Cache-Control':'no-store'}});
+    upstreamStatus=response.status;
+    if(!response.ok){
+     try{const body=await response.json();const code=body?.Code||body?.code;if(typeof code==='string'&&/^[a-z0-9_.-]{1,80}$/i.test(code))providerCode=code}catch{}
+     throw Error('Upstream rejected request');
+    }
+   }catch(error){
+    const errorCode=upstreamStatus?'upstream_http_'+upstreamStatus:error?.name==='TimeoutError'||error?.name==='AbortError'?'upstream_timeout':'upstream_transport';
+    const message=String(error?.message||'Unknown transport error').split(CREATIO_WEBHOOK).join('[webhook]').replace(/https?:\/\/[^\s)]+/g,'[url]').slice(0,240);
+    record.delivery={...record.delivery,status:'failed',httpStatus:upstreamStatus,errorCode,providerCode};
+    await save();
+    console.error(JSON.stringify({event:'creatio_delivery_failed',requestId:id,httpStatus:upstreamStatus,errorCode,providerCode,transportMessage:message}));
+    return Response.json({ok:false,saved:true,requestId:id},{status:502,headers:{'Cache-Control':'no-store'}});
    }
+   record.delivery={...record.delivery,status:'delivered',httpStatus:upstreamStatus,deliveredAt:new Date().toISOString()};
+   try{await save()}catch{console.error(JSON.stringify({event:'creatio_receipt_save_failed',requestId:id,httpStatus:upstreamStatus}))}
+   return Response.json({ok:true,requestId:id},{status:201,headers:{'Cache-Control':'no-store'}});
   }catch{return new Response('Unable to process request',{status:500})}
  }
  if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed',{status:405,headers:{Allow:'GET, HEAD'}});
