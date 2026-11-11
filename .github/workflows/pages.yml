@@ -24,7 +24,7 @@ jobs:
         run: npm run build:pages
         env:
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-          PAGES_SITE_URL: ${{ vars.PAGES_SITE_URL }}
+          PAGES_SITE_URL: ${{ vars.PAGES_SITE_URL || steps.pages.outputs.base_url }}
           LEAD_API_URL: ${{ vars.LEAD_API_URL }}
           PAGES_CUSTOM_DOMAIN: ${{ vars.PAGES_CUSTOM_DOMAIN }}
       - name: Check
